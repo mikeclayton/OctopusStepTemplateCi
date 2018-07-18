@@ -43,14 +43,9 @@ function ConvertTo-PSSource
             [string[]] $Keys
         )
         $source = new-object System.Text.StringBuilder;
-        if( $Keys.Length -eq 0 )
+        [void] $source.Append("@{");
+        if( $Keys.Length -gt 0 )
         {
-            [void] $source.Append("@{}");
-        }
-        else
-        {
-            $source = new-object System.Text.StringBuilder;
-            [void] $source.Append("@{");
             [void] $source.AppendLine();
             foreach( $key in $Keys )
             {
@@ -62,8 +57,8 @@ function ConvertTo-PSSource
                 [void] $source.AppendLine();
             }
             [void] $source.Append($baseIndent);
-            [void] $source.Append("}");
         }
+        [void] $source.Append("}");
         return $source.ToString();
     }
 
