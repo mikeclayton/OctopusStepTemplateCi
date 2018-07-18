@@ -168,13 +168,9 @@ function ConvertTo-PSSource
 
         { $InputObject.GetType().IsArray } {
             $source = new-object System.Text.StringBuilder;
-            if( $InputObject.Length -eq 0 )
+            [void] $source.Append("@(");
+            if( $InputObject.Length -gt 0 )
             {
-                [void] $source.Append("@()");
-            }
-            else
-            {
-                [void] $source.Append("@(");
                 [void] $source.AppendLine();
                 for( $index = 0; $index -lt $InputObject.Length; $index++ )
                 {
@@ -198,8 +194,8 @@ function ConvertTo-PSSource
                     [void] $source.AppendLine();
                 }
                 [void] $source.Append($baseIndent);
-                [void] $source.Append(")");
             }
+            [void] $source.Append(")");
             return $source.ToString();
         }
 
