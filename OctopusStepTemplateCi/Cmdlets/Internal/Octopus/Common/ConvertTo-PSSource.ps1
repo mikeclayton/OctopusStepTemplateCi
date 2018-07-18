@@ -144,13 +144,10 @@ function ConvertTo-PSSource
         { $InputObject -is [System.Management.Automation.PSCustomObject] } {
             $source = new-object System.Text.StringBuilder;
             $properties = @( $InputObject.psobject.Properties.GetEnumerator() );
-            if( $properties.Length -eq 0 )
+            [void] $source.Append("new-object PSCustomObject");
+            if( $properties.Length -gt 0 )
             {
-                [void] $source.Append("new-object PSCustomObject");
-            }
-            else
-            {
-                [void] $source.AppendLine("new-object PSCustomObject -Property ([ordered] @{");
+                [void] $source.AppendLine(" -Property ([ordered] @{");
                 foreach( $property in $InputObject.psobject.Properties )
                 {
                     [void] $source.Append($baseIndent);
@@ -176,7 +173,7 @@ function ConvertTo-PSSource
                 {
                     [void] $source.Append($baseIndent);
                     [void] $source.Append($indent);
-                    $item     = $InputObject[$index];
+                    $item = $InputObject[$index];
                     $requiresEval = Test-RequiresEvalInArray -InputObject $item;
                     if( $requiresEval )
                     {
