@@ -32,16 +32,72 @@ function ConvertTo-PSSource
 
     )
 
-    function ConvertTo-PSString
+    $ErrorActionPreference = "Stop";
+    Set-StrictMode -Version "Latest";
+
+    function ConvertFrom-KeyValuePairs
     {
-        param( [string] $InputObject )
-        $InputObject = $InputObject.Replace("``", "````");
-        $InputObject = $InputObject.Replace("`"", "```"");
-        $InputObject = $InputObject.Replace("`$", "```$");
-        $InputObject = $InputObject.Replace("`r", "``r");
-        $InputObject = $InputObject.Replace("`n", "``n");
-        $InputObject = $InputObject.Replace("`t", "``t");
-        return "`"$InputObject`"";
+        param
+        (
+            [object] $InputObject,
+            [string[]] $Keys
+        )
+        $source = new-object System.Text.StringBuilder;
+        if( $Keys.Length -eq 0 )
+        {
+            [void] $source.Append("@{}");
+        }
+        else
+        {
+            $source = new-object System.Text.StringBuilder;
+            [void] $source.Append("@{");
+            [void] $source.AppendLine();
+            foreach( $key in $Keys )
+            {
+                [void] $source.Append($baseIndent);
+                [void] $source.Append($indent);
+                [void] $source.Append((ConvertTo-PSSource -InputObject $key));
+                [void] $source.Append(" = ");
+                [void] $source.Append((ConvertTo-PSSource -InputObject $InputObject[$key] -IndentLevel ($IndentLevel + 1)));
+                [void] $source.AppendLine();
+            }
+            [void] $source.Append($baseIndent);
+            [void] $source.Append("}");
+        }
+        return $source.ToString();
+    }
+
+    function Test-RequiresEvalInArray
+    {
+        param
+        (
+            [object] $InputObject
+        )
+        # does the value need "eval" brackets when nested in an array?
+        # e.g.
+        #     @( $null );
+        #     @( $true );
+        #     @( @{ ... } );
+        # vs
+        #     @( (new-object [PSCustomObject] -Property @{ ... }) );
+        switch( $true )
+        {
+            { $InputObject -eq $null } {
+                return $false;
+            }
+            { $InputObject.GetType().IsValueType } {
+                return $false;
+            }
+            { $InputObject -is [string] } {
+                return $false;
+            }
+            { $InputObject -is [hashtable] } {
+                return $false;
+            }
+            default {
+                return $true;
+            }
+        }
     }
 
     $indent = " " * 4;
@@ -66,37 +122,31 @@ function ConvertTo-PSSource
         }
 
         { $InputObject -is [string] } {
-            return (ConvertTo-PSString -InputObject $InputObject);
+            $value = $InputObject;
+            $value = $value.Replace("``", "````");
+            $value = $value.Replace("`"", "```"");
+            $value = $value.Replace("`$", "```$");
+            $value = $value.Replace("`r", "``r");
+            $value = $value.Replace("`n", "``n");
+            $value = $value.Replace("`t", "``t");
+            $value = "`"$value`"";
+            return $value;
         }
 
-        { $InputObject -is [hashtable] } {
-            $source = new-object System.Text.StringBuilder;
+        { ($InputObject -is [hashtable]) } {
             $keys = @( $InputObject.Keys | sort-object );
-            if( $keys.Length -eq 0 )
-            {
-                [void] $source.Append("@{}");
-            }
-            else
-            {
-                $source = new-object System.Text.StringBuilder;
-                [void] $source.Append("@{");
-                [void] $source.AppendLine();
-                foreach( $key in $keys )
-                {
-                    [void] $source.Append($baseIndent);
-                    [void] $source.Append($indent);
-                    [void] $source.Append((ConvertTo-PSSource -InputObject $key));
-                    [void] $source.Append(" = ");
-                    [void] $source.Append((ConvertTo-PSSource -InputObject $InputObject[$key] -IndentLevel ($IndentLevel + 1)));
-                    [void] $source.AppendLine();
-                }
-                [void] $source.Append($baseIndent);
-                [void] $source.Append("}");
-            }
+            return (ConvertFrom-KeyValuePairs -InputObject $InputObject -Keys $keys);
+        }
+
+        { ($InputObject -is [System.Collections.Specialized.OrderedDictionary]) } {
+            $source = new-object System.Text.StringBuilder;
+            [void] $source.Append("[ordered]");
+            [void] $source.Append(" ");
+            [void] $source.Append((ConvertFrom-KeyValuePairs -InputObject $InputObject -Keys $InputObject.Keys));
             return $source.ToString();
         }
 
-        { $InputObject -is [PSCustomObject] } {
+        { $InputObject -is [System.Management.Automation.PSCustomObject] } {
             $source = new-object System.Text.StringBuilder;
             $properties = @( $InputObject.psobject.Properties.GetEnumerator() );
             if( $properties.Length -eq 0 )
@@ -135,7 +185,17 @@ function ConvertTo-PSSource
                 {
                     [void] $source.Append($baseIndent);
                     [void] $source.Append($indent);
-                    [void] $source.Append((ConvertTo-PSSource -InputObject $InputObject[$index] -IndentLevel ($IndentLevel + 1)));
+                    $item     = $InputObject[$index];
+                    $requiresEval = Test-RequiresEvalInArray -InputObject $item;
+                    if( $requiresEval )
+                    {
+                        [void] $source.Append("(");
+                    }
+                    [void] $source.Append((ConvertTo-PSSource -InputObject $item -IndentLevel ($IndentLevel + 1)));
+                    if( $requiresEval )
+                    {
+                        [void] $source.Append(")");
+                    }
                     if( $index -lt ($InputObject.Length - 1) )
                     {
                         [void] $source.Append(",");

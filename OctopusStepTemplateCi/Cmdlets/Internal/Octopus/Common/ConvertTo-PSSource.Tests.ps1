@@ -21,12 +21,16 @@ InModuleScope "OctopusStepTemplateCi" {
 
     Describe "ConvertTo-PSSource" {
 
+        # $null
+
         It "Should return the value when the InputObject is `$null" {
             $input    = $null;
             $expected = "`$null";
             $actual = ConvertTo-PSSource -InputObject $input;
             $actual | Should Be $expected;
         }
+
+        # [bool]
 
         It "Should return the value when the InputObject is `$true" {
             $input    = $true;
@@ -42,6 +46,8 @@ InModuleScope "OctopusStepTemplateCi" {
             $actual | Should Be $expected;
         }
 
+        # [int]
+
         It "Should return the value when the InputObject is a positive integer" {
             $input    = 100;
             $expected = "100";
@@ -55,6 +61,8 @@ InModuleScope "OctopusStepTemplateCi" {
             $actual = ConvertTo-PSSource -InputObject $input;
             $actual | Should Be $expected;
         }
+
+        # [string]
 
         It "Should return the value when the InputObject is an empty string" {
             $input    = [string]::Empty;
@@ -98,26 +106,7 @@ InModuleScope "OctopusStepTemplateCi" {
             $actual | Should Be $expected;
         }
 
-        It "Should return the value when the InputObject is an empty array" {
-            $input    = @();
-            $expected = "@()";
-            $actual = ConvertTo-PSSource -InputObject $input;
-            $actual | Should Be $expected;
-        }
-
-        It "Should return the value when the InputObject is an array with a single item" {
-            $input    = @( 100 );
-            $expected = "@(`r`n    100`r`n)";
-            $actual = ConvertTo-PSSource -InputObject $input;
-            $actual | Should Be $expected;
-        }
-
-        It "Should return the value when the InputObject is an array with multiple items" {
-            $input    = @( $null, 100, "my string" );
-            $expected = "@(`r`n    `$null,`r`n    100,`r`n    `"my string`"`r`n)";
-            $actual = ConvertTo-PSSource -InputObject $input;
-            $actual | Should Be $expected;
-        }
+        # [hashtable]
 
         It "Should return the value when the InputObject is an empty hashtable" {
             $input    = @{};
@@ -153,9 +142,9 @@ InModuleScope "OctopusStepTemplateCi" {
         $null,
         200,
         "string",
-        new-object PSCustomObject -Property ([ordered] @{
+        (new-object PSCustomObject -Property ([ordered] @{
             "nestedProperty" = "nestedValue"
-        })
+        }))
     )
     "myInt" = 100
     "myNull" = $null
@@ -170,6 +159,62 @@ InModuleScope "OctopusStepTemplateCi" {
             $actual = ConvertTo-PSSource -InputObject $input;
             $actual | Should Be $expected;
         }
+
+        # [ordered]
+
+        It "Should return the value when the InputObject is an empty ordered dictionary" {
+            $input    = [ordered] @{};
+            $expected = "[ordered] @{}";
+            $actual = ConvertTo-PSSource -InputObject $input;
+            $actual | Should Be $expected;
+        }
+
+        It "Should return the value when the InputObject is an ordered dictionary with a single item" {
+            $input    = [ordered] @{ "myInt" = 100 };
+            $expected = @'
+[ordered] @{
+    "myInt" = 100
+}
+'@
+            # normalize line breaks in "$expected" here-string in case they get mangled on git commit
+            if( $expected.IndexOf("`r`n") -eq -1 ) { $expected = $expected.Replace("`n", "`r`n"); }
+            $actual = ConvertTo-PSSource -InputObject $input;
+            $actual | Should Be $expected;
+        }
+
+        It "Should return the value when the InputObject is an ordered dictionary with multiple items" {
+            $input    = [ordered] @{
+                "myNull"     = $null
+                "myInt"      = 100
+                "myString"   = "text"
+                "myArray"    = @( $null, 200, "string", [PSCustomObject] [ordered] @{ "nestedProperty" = "nestedValue" } )
+                "myPsObject" = [PSCustomObject] [ordered] @{ "childProperty" = "childValue" }
+            };
+            $expected = @'
+[ordered] @{
+    "myNull" = $null
+    "myInt" = 100
+    "myString" = "text"
+    "myArray" = @(
+        $null,
+        200,
+        "string",
+        (new-object PSCustomObject -Property ([ordered] @{
+            "nestedProperty" = "nestedValue"
+        }))
+    )
+    "myPsObject" = new-object PSCustomObject -Property ([ordered] @{
+        "childProperty" = "childValue"
+    })
+}
+'@
+            # normalize line breaks in "$expected" here-string in case they get mangled on git commit
+            if( $expected.IndexOf("`r`n") -eq -1 ) { $expected = $expected.Replace("`n", "`r`n"); }
+            $actual = ConvertTo-PSSource -InputObject $input;
+            $actual | Should Be $expected;
+        }
+
+        # pscustomobject
 
         It "Should return the value when the InputObject is an empty PSCustomObject" {
             $input    = new-object PSCustomObject;
@@ -195,15 +240,77 @@ new-object PSCustomObject -Property ([ordered] @{
         $null,
         200,
         "string",
-        new-object PSCustomObject -Property ([ordered] @{
+        (new-object PSCustomObject -Property ([ordered] @{
             "nestedProperty" = "nestedValue"
-        })
+        }))
     )
     "myPsObject" = new-object PSCustomObject -Property ([ordered] @{
         "childProperty" = "childValue"
     })
 })
 '@
+            # normalize line breaks in "$expected" here-string in case they get mangled on git commit
+            if( $expected.IndexOf("`r`n") -eq -1 ) { $expected = $expected.Replace("`n", "`r`n"); }
+            $actual = ConvertTo-PSSource -InputObject $input;
+            $actual | Should Be $expected;
+        }
+
+        # array
+
+        It "Should return the value when the InputObject is an empty array" {
+            $input    = @();
+            $expected = "@()";
+            $actual = ConvertTo-PSSource -InputObject $input;
+            $actual | Should Be $expected;
+        }
+
+        It "Should return the value when the InputObject is an array with a single item" {
+            $input    = @( 100 );
+            $expected = "@(`r`n    100`r`n)";
+            $actual = ConvertTo-PSSource -InputObject $input;
+            $actual | Should Be $expected;
+        }
+
+        It "Should return the value when the InputObject is an array with multiple items" {
+            $input    = @( $null, 100, "my string" );
+            $expected = "@(`r`n    `$null,`r`n    100,`r`n    `"my string`"`r`n)";
+            $actual = ConvertTo-PSSource -InputObject $input;
+            $actual | Should Be $expected;
+        }
+
+        It "Should return the value when the InputObject is an array of hashtables" {
+            $input    = @( @{ "aaa" = "bbb" }, @{ "ccc" = "ddd" } );
+            $expected = @'
+@(
+    @{
+        "aaa" = "bbb"
+    },
+    @{
+        "ccc" = "ddd"
+    }
+)
+'@;
+            # normalize line breaks in "$expected" here-string in case they get mangled on git commit
+            if( $expected.IndexOf("`r`n") -eq -1 ) { $expected = $expected.Replace("`n", "`r`n"); }
+            $actual = ConvertTo-PSSource -InputObject $input;
+            $actual | Should Be $expected;
+        }
+
+        It "Should return the value when the InputObject is an array of PSCustomObjects" {
+            $input    = @(
+                (new-object PSCustomObject -Property @{ "aaa" = "bbb" }),
+                (new-object PSCustomObject -Property @{ "ccc" = "ddd" })
+            );
+            $expected = @'
+@(
+    (new-object PSCustomObject -Property ([ordered] @{
+        "aaa" = "bbb"
+    })),
+    (new-object PSCustomObject -Property ([ordered] @{
+        "ccc" = "ddd"
+    }))
+)
+'@;
             # normalize line breaks in "$expected" here-string in case they get mangled on git commit
             if( $expected.IndexOf("`r`n") -eq -1 ) { $expected = $expected.Replace("`n", "`r`n"); }
             $actual = ConvertTo-PSSource -InputObject $input;
