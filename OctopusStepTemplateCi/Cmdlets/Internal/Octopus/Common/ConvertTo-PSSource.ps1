@@ -133,12 +133,12 @@ function ConvertTo-PSSource
             return $value;
         }
 
-        { ($InputObject -is [hashtable]) } {
+        { $InputObject -is [hashtable] } {
             $keys = @( $InputObject.Keys | sort-object );
             return (ConvertFrom-KeyValuePairs -InputObject $InputObject -Keys $keys);
         }
 
-        { ($InputObject -is [System.Collections.Specialized.OrderedDictionary]) } {
+        { $InputObject -is [System.Collections.Specialized.OrderedDictionary] } {
             $source = new-object System.Text.StringBuilder;
             [void] $source.Append("[ordered]");
             [void] $source.Append(" ");
