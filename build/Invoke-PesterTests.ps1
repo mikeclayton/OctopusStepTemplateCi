@@ -45,6 +45,10 @@ $coverageFiles = (Get-ChildItem -Path "$testPath\*.ps1" -Recurse -Exclude *.Test
 Import-Module -Name "$rootFolder\OctopusStepTemplateCi" -ErrorAction "Stop";
 
 
+$env:OctopusUri    = "https://example.org/";
+$env:OctopusApiKey = "API-myapikey";
+
+
 write-host "invoking pester tests";
 $testResults = Invoke-Pester -Path         $testPath `
                              -OutputFile   "PesterTestOutput.xml" `

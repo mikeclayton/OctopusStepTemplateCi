@@ -27,34 +27,24 @@ function Test-OctopusApiConnectivity
     param
     (
 
-        $OctopusUri = $ENV:OctopusURI,
+        [Parameter(Mandatory=$true)]
+        [string] $OctopusServerUri,
 
-        $OctopusApiKey = $ENV:OctopusApikey,
-
-        [switch] $TestConnection
+        [Parameter(Mandatory=$true)]
+        [string] $OctopusApiKey
 
     )
 
-    if( [string]::IsNullOrWhiteSpace($OctopusUri) )
+    $apiResponse = Invoke-OctopusApiOperation -OctopusServerUri $OctopusServerUri `
+                                              -OctopusApiKey    $OctopusApiKey `
+                                              -Method           "GET" `
+                                              -Uri              "/api";
+
+    $apiResult = $apiResponse | ? Application -eq "Octopus Deploy";
+
+    if( $null -eq $apiResult )
     {
-        throw "The OctopusUri environment variable is not set, please set this variable and execute again."
-    }
-
-    if( [string]::IsNullOrWhiteSpace($OctopusApiKey) )
-    {
-        throw "The OctopusApiKey environment variables is not set, please set this variable and execute again."
-    }
-
-    if( $TestConnection )
-    {
-
-        $apiTestCall = Invoke-OctopusApiOperation -Method "GET" -Uri "/api" | ? Application -eq "Octopus Deploy"
-
-        if( $null -eq $apiTestCall )
-        {
-            throw "Octopus Deploy Api is not responding correctly"
-        }
-
+        throw "Octopus Deploy Api is not responding correctly"
     }
 
 }

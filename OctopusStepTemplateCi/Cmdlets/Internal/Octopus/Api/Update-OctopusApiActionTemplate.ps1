@@ -27,11 +27,11 @@ function Update-OctopusApiActionTemplate
     param
     (
 
-        [Parameter(Mandatory=$false)]
-        [string] $OctopusServerUri = $env:OctopusUri,
+        [Parameter(Mandatory=$true)]
+        [string] $OctopusServerUri,
 
-        [Parameter(Mandatory=$false)]
-        [string] $OctopusApiKey = $env:OctopusApiKey,
+        [Parameter(Mandatory=$true)]
+        [string] $OctopusApiKey,
 
         [Parameter(Mandatory=$true)]
         [string] $ObjectId,

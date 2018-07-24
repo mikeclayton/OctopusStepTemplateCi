@@ -103,9 +103,13 @@ function Invoke-TeamCityCiUpload
     try
     {
 
+        $octopusServerUri = $env:OctopusUri;
+        $octopusApiKey    = $env:OctopusApiKey;
+
         if( $UploadIfSuccessful )
         {
-            Test-OctopusApiConnectivity -TestConnection;
+            Test-OctopusApiConnectivity -OctopusServerUri $octopusServerUri `
+                                        -OctopusApiKey    $octopusApiKey;
         }
 
         Reset-BuildOutputDirectory -Path $BuildDirectory;

@@ -27,11 +27,11 @@ function Invoke-OctopusApiOperation
     param
     (
 
-        [Parameter(Mandatory=$false)]
-        [string] $OctopusUri = $env:OctopusURI,
+        [Parameter(Mandatory=$true)]
+        [string] $OctopusServerUri,
 
-        [Parameter(Mandatory=$false)]
-        [string] $OctopusApiKey = $env:OctopusApikey,
+        [Parameter(Mandatory=$true)]
+        [string] $OctopusApiKey,
 
         [Parameter(Mandatory=$true)]
         [ValidateSet("GET", "POST", "PUT")]
@@ -52,9 +52,7 @@ function Invoke-OctopusApiOperation
     $ProgressPreference = "SilentlyContinue";
     Set-StrictMode -Version "Latest";
 
-    Test-OctopusApiConnectivity;
-
-    $Uri      = $OctopusUri + $Uri;
+    $Uri      = $OctopusServerUri + $Uri;
     $cacheKey = "$Uri-$Method";
 
     $cache = Get-OctopusApiCache;

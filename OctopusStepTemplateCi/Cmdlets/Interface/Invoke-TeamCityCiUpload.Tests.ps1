@@ -27,7 +27,7 @@ Set-StrictMode -Version "Latest";
 
 InModuleScope "OctopusStepTemplateCi" {
 
-Describe "Invoke-TeamCityCiUpload" {
+    Describe "Invoke-TeamCityCiUpload" {
 
         Mock Write-TeamCityBuildLogMessage {};
         Mock Sync-ScriptModule { @{UploadCount = 0} };

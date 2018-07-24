@@ -53,6 +53,9 @@ function Sync-ScriptModule
 
     )
 
+    $octopusServerUri = $env:OctopusUri;
+    $octopusApiKey    = $env:OctopusApiKey;
+
     $newVariableSet = Read-ScriptModuleVariableSet -Path $Path;
 
     $script = Get-Content -LiteralPath $Path -Raw;
@@ -61,20 +64,28 @@ function Sync-ScriptModule
 
     $result = @{ "UploadCount" = 0 };
 
-    $scriptModuleVariableSets = Get-OctopusApiLibraryVariableSet -ObjectId "All" -UseCache:$UseCache;
+    $scriptModuleVariableSets = Get-OctopusApiLibraryVariableSet -OctopusServerUri $octopusServerUri `
+                                                                 -OctopusApiKey    $octopusApiKey `
+                                                                 -ObjectId         "All" `
+                                                                 -UseCache:$UseCache;
     $scriptModuleVariableSet  = $scriptModuleVariableSets | where-object { $_.Name -eq $moduleName };
 
     if( $null -eq $scriptModuleVariableSet )
     {
         Write-TeamCityBuildLogMessage "VariableSet for script module '$moduleName' does not exist. Creating";
-        $scriptModuleVariableSet = New-OctopusApiLibraryVariableSet -Object $newVariableSet;
+        $scriptModuleVariableSet = New-OctopusApiLibraryVariableSet -OctopusServerUri $octopusServerUri `
+                                                                    -OctopusApiKey    $octopusApiKey `
+                                                                    -Object           $newVariableSet;
         $result.UploadCount++;
     }
     elseif( $scriptModuleVariableSet.Description -ne $moduleDescription )
     {
         Write-TeamCityBuildLogMessage "VariableSet for script module '$moduleName' has different metadata. Updating.";
         $scriptModuleVariableSet.Description = $moduleDescription;
-        $response = Update-OctopusApiLibraryVariableSet -ObjectId $scriptModuleVariableSet.Id -Object $scriptModuleVariableSet;
+        $response = Update-OctopusApiLibraryVariableSet -OctopusServerUri $octopusServerUri `
+                                                        -OctopusApiKey    $octopusApiKey `
+                                                        -ObjectId         $scriptModuleVariableSet.Id `
+                                                        -Object           $scriptModuleVariableSet;
         $result.UploadCount++;
     }
     else
@@ -82,13 +93,19 @@ function Sync-ScriptModule
         Write-TeamCityBuildLogMessage "VariableSet for script module '$moduleName' has not changed. Skipping.";
     }
 
-    $scriptModule = Get-OctopusApiObject -ObjectUri $scriptModuleVariableSet.Links.Variables -UseCache:$UseCache;
+    $scriptModule = Get-OctopusApiObject -OctopusServerUri $octopusServerUri `
+                                         -OctopusApiKey    $octopusApiKey `
+                                         -ObjectUri        $scriptModuleVariableSet.Links.Variables `
+                                         -UseCache:$UseCache;
 
     if( $scriptModule.Variables.Count -eq 0 )
     {
         Write-TeamCityBuildLogMessage "Script module '$moduleName' does not exist. Creating";
         $scriptModule.Variables += Read-ScriptModule -Path $Path;
-        $response = Update-OctopusApiObject -ObjectUri $scriptModuleVariableSet.Links.Variables -Object $scriptModule;
+        $response = Update-OctopusApiObject -OctopusServerUri $octopusServerUri `
+                                            -OctopusApiKey    $octopusApiKey `
+                                            -ObjectUri        $scriptModuleVariableSet.Links.Variables `
+                                            -Object           $scriptModule;
         $result.UploadCount++;
     }
     else
@@ -98,7 +115,10 @@ function Sync-ScriptModule
         {
             Write-TeamCityBuildLogMessage "Script module '$moduleName' has changed. Updating";
             $scriptModule.Variables[0].Value = $moduleScript;
-            $response = Update-OctopusApiObject -ObjectUri $scriptModuleVariableSet.Links.Variables -Object $scriptModule;
+            $response = Update-OctopusApiObject -OctopusServerUri $octopusServerUri `
+                                                -OctopusApiKey    $octopusApiKey `
+                                                -ObjectUri        $scriptModuleVariableSet.Links.Variables `
+                                                -Object           $scriptModule;
             $result.UploadCount++;
         }
         else

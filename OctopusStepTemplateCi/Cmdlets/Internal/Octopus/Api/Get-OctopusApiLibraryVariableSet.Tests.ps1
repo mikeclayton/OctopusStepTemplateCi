@@ -29,20 +29,19 @@ InModuleScope "OctopusStepTemplateCi" {
 
     Describe "Get-OctopusApiLibraryVariableSet" {
 
-        $env:OctopusUri    = "http://example.local";
-        $env:OctopusApiKey = "secret";
-
         Mock -CommandName "Invoke-WebRequest" `
              -MockWith { throw "Invoke-WebRequest should be mocked with a ParameterFilter!" };
 
         It "Should construct the uri based on the object type" {
 
             Mock -CommandName "Invoke-WebRequest" `
-                 -ParameterFilter { ($Uri -eq "http://example.local/api/LibraryVariableSets/All") -and ($Method -eq "GET") } `
+                 -ParameterFilter { ($Uri -eq "https://example.org/api/LibraryVariableSets/All") -and ($Method -eq "GET") } `
                  -MockWith { return @{ "Content" = "" }; } `
                  -Verifiable;
 
-            Get-OctopusApiLibraryVariableSet -ObjectId "All";
+            Get-OctopusApiLibraryVariableSet -OctopusServerUri "https://example.org" `
+                                             -OctopusApiKey    "API-myapikey" `
+                                             -ObjectId         "All";
 
             Assert-VerifiableMock;
 
@@ -51,11 +50,13 @@ InModuleScope "OctopusStepTemplateCi" {
         It "Should use the appropriate http method based on the type of request" {
 
             Mock -CommandName "Invoke-WebRequest" `
-                 -ParameterFilter { ($Uri -eq "http://example.local/api/LibraryVariableSets/100") -and ($Method -eq "GET") } `
+                 -ParameterFilter { ($Uri -eq "https://example.org/api/LibraryVariableSets/100") -and ($Method -eq "GET") } `
                  -MockWith { return @{ "Content" = "" }; } `
                  -Verifiable;
 
-            Get-OctopusApiLibraryVariableSet -ObjectId "100";
+            Get-OctopusApiLibraryVariableSet -OctopusServerUri "https://example.org" `
+                                             -OctopusApiKey    "API-myapikey" `
+                                             -ObjectId         "100";
 
             Assert-VerifiableMock;
 
@@ -70,11 +71,14 @@ InModuleScope "OctopusStepTemplateCi" {
                  -Verifiable;
 
             Mock -CommandName "Invoke-WebRequest" `
-                 -ParameterFilter { ($Uri -eq "http://example.local/api/LibraryVariableSets/200") -and ($Method -eq "GET") } `
+                 -ParameterFilter { ($Uri -eq "https://example.org/api/LibraryVariableSets/200") -and ($Method -eq "GET") } `
                  -MockWith { return @{ "Content" = "" }; } `
                  -Verifiable;
 
-            Get-OctopusApiLibraryVariableSet -ObjectId "200" -UseCache;
+            Get-OctopusApiLibraryVariableSet -OctopusServerUri "https://example.org" `
+                                             -OctopusApiKey    "API-myapikey" `
+                                             -ObjectId         "200" `
+                                             -UseCache;
 
             Assert-VerifiableMock;
 

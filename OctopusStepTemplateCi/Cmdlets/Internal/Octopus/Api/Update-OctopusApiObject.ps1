@@ -27,11 +27,11 @@ function Update-OctopusApiObject
     param
     (
 
-        [Parameter(Mandatory=$false)]
-        [string] $OctopusServerUri = $env:OctopusUri,
+        [Parameter(Mandatory=$true)]
+        [string] $OctopusServerUri,
 
-        [Parameter(Mandatory=$false)]
-        [string] $OctopusApiKey = $env:OctopusApiKey,
+        [Parameter(Mandatory=$true)]
+        [string] $OctopusApiKey,
 
         [Parameter(Mandatory=$true)]
         [string] $ObjectUri,
@@ -41,11 +41,11 @@ function Update-OctopusApiObject
 
     )
 
-    $results = Invoke-OctopusApiOperation -OctopusUri    $OctopusServerUri `
-                                          -OctopusApiKey $OctopusApiKey `
-                                          -Method        "PUT" `
-                                          -Uri           $ObjectUri `
-                                          -Body          $Object `
+    $results = Invoke-OctopusApiOperation -OctopusServerUri $OctopusServerUri `
+                                          -OctopusApiKey    $OctopusApiKey `
+                                          -Method           "PUT" `
+                                          -Uri              $ObjectUri `
+                                          -Body             $Object `
                                           -UseCache:$false;
 
     return @(, $results);

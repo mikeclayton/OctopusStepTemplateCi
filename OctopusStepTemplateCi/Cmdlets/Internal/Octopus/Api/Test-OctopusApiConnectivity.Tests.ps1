@@ -29,36 +29,12 @@ InModuleScope "OctopusStepTemplateCi" {
 
     Describe "Test-OctopusApiConnectivity" {
 
-        It "Should throw an exception if the octopus uri does not exist" {
-           {
-               Test-OctopusApiConnectivity -OctopusUri $null -OctopusApiKey "fake-key";
-           } | Should Throw "The OctopusUri environment variable is not set, please set this variable and execute again.";
-        }
-
-        It "Should throw an exception if the octopus api key does not exist" {
-           {
-               Test-OctopusApiConnectivity -OctopusUri "fakeurl" -OctopusApiKey $null;
-           } | Should Throw "The OctopusApiKey environment variables is not set, please set this variable and execute again.";
-        }
-
-        It "Should not make a test api call to the octopus server if not requested" {
-
-           Mock -CommandName "Invoke-OctopusApiOperation" `
-                -MockWith {} `
-                -Verifiable;
-
-           Test-OctopusApiConnectivity -OctopusUri "na" -OctopusApiKey "na";
-
-           Assert-MockCalled Invoke-OctopusApiOperation -times 0;
-
-        }
-
-        It "Should make a test api call to the octopus server (if requested) to see if it is responding" {
+        It "Should make a test api call to the octopus server to see if it is responding" {
 
            Mock -CommandName "Invoke-OctopusApiOperation" `
                 -MockWith { return @{ "Application" = "Octopus Deploy" }; };
 
-           Test-OctopusApiConnectivity -OctopusUri "na" -OctopusApiKey "na" -TestConnection;
+           Test-OctopusApiConnectivity -OctopusServerUri "na" -OctopusApiKey "na";
 
            Assert-MockCalled Invoke-OctopusApiOperation -times 1;
 
@@ -70,7 +46,7 @@ InModuleScope "OctopusStepTemplateCi" {
                  -MockWith {};
 
             {
-                Test-OctopusApiConnectivity -OctopusUri "na" -OctopusApiKey "na" -TestConnection;
+                Test-OctopusApiConnectivity -OctopusServerUri "na" -OctopusApiKey "na";
             } | Should Throw "Octopus Deploy Api is not responding correctly";
 
         }

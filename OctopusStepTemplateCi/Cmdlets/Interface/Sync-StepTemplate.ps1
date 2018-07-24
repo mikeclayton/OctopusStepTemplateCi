@@ -57,10 +57,16 @@ function Sync-StepTemplate
     $ProgressPreference = "SilentlyContinue";
     Set-StrictMode -Version "Latest";
 
+    $octopusServerUri = $env:OctopusUri;
+    $octopusApiKey    = $env:OctopusApiKey;
+
     $newStepTemplate = Read-StepTemplate -Path $Path;
     $templateName = $newStepTemplate.Name;
 
-    $stepTemplates = Get-OctopusApiActionTemplate -ObjectId "All" -UseCache:$UseCache;
+    $stepTemplates = Get-OctopusApiActionTemplate -OctopusServerUri $octopusServerUri `
+                                                  -OctopusApiKey    $octopusApiKey `
+                                                  -ObjectId         "All" `
+                                                  -UseCache:$UseCache;
     $stepTemplate  = $stepTemplates | where-object { $_.Name -eq $templateName };
 
     $result = @{ "UploadCount" = 0 };
@@ -68,7 +74,9 @@ function Sync-StepTemplate
     if( $null -eq $stepTemplate )
     {
         Write-TeamCityBuildLogMessage "Step template '$templateName' does not exist. Creating";
-        $stepTemplate = New-OctopusApiActionTemplate -Object $newStepTemplate;
+        $stepTemplate = New-OctopusApiActionTemplate -OctopusServerUri $octopusServerUri `
+                                                     -OctopusApiKey    $octopusApiKey `
+                                                     -Object           $newStepTemplate;
         $result.UploadCount++;
     }
     else
@@ -103,7 +111,10 @@ function Sync-StepTemplate
                 $newStepTemplate.Remove("Version");
             }
 
-            $stepTemplate = Update-OctopusApiActionTemplate -ObjectId $stepTemplate.Id -Object $newStepTemplate;
+            $stepTemplate = Update-OctopusApiActionTemplate -OctopusServerUri $octopusServerUri `
+                                                            -OctopusApiKey    $octopusApiKey `
+                                                            -ObjectId         $stepTemplate.Id `
+                                                            -Object           $newStepTemplate;
             $result.UploadCount++;
 
         }
